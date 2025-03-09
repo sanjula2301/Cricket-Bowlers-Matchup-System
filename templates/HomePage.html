@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T20 Cricket Bowler Performance</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .navbar {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            color: white;
+        }
+        .hero-section {
+            background: url('C:/Users/sanju/OneDrive/Documents/iit lectures/Final Year 1st Sem/stock-vector-illustration-of-batsman-and-bowler-playing-cricket-championship-sports-championship-banner-with-2384009301.jpg') no-repeat center center/cover;
+        }
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <!-- Navbar -->
+    <nav class="navbar flex justify-between items-center p-4">
+        <div class="flex items-center space-x-4">
+            <img src="https://placehold.co/50x50" alt="Logo" class="h-10">
+            <ul class="flex space-x-6">
+                <li><a href="#" class="hover:underline">Home</a></li>
+                <li><a href="#" class="hover:underline">Input Data</a></li>
+                <li><a href="#" class="hover:underline">KPI Analysis</a></li>
+                <li><a href="#" class="hover:underline">Insights</a></li>
+                <li><a href="#" class="hover:underline">About</a></li>
+            </ul>
+        </div>
+        <button class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100">Login</button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section flex items-center justify-center h-64 text-white">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold">T20 Cricket Bowler Performance Analysis</h1>
+            <button class="mt-4 bg-yellow-500 px-6 py-2 rounded hover:bg-yellow-600">Sign Up</button>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="card bg-white p-6 rounded shadow">
+            <h2 class="text-2xl font-bold mb-4">Analyze Your Performance</h2>
+            <p>Upload your data and get detailed insights into your bowling performance.</p>
+        </div>
+        <div class="card bg-white p-6 rounded shadow">
+            <h2 class="text-2xl font-bold mb-4">Visualize Key Metrics</h2>
+            <p>Interactive charts and graphs to help you understand your strengths and weaknesses.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4">
+        <p>&copy; 2025 T20 Cricket Analysis. All rights reserved.</p>
+    </footer>
+</body>
+</html>

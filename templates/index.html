@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bowler Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .form-container, .result-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-container h2 {
+            text-align: center;
+        }
+        .form-container label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .form-container input, .form-container select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #0056b3;
+        }
+        .result-container {
+            margin-top: 20px;
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .bold-text {
+            font-weight: bold;
+        }
+        .table-container {
+            width: 100%;
+            margin-top: 15px;
+            border-collapse: collapse;
+        }
+        .table-container th, .table-container td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        .table-container th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Bowler Comparison</h2>
+        <form action="/compare" method="POST">
+            <label for="MatchPhase">Match Phase:</label>
+            <select name="MatchPhase" required>
+                <option value="POWERPLAY">POWERPLAY</option>
+                <option value="MIDDLEOVERS">MIDDLEOVERS</option>
+                <option value="DEATHOVERS">DEATHOVERS</option>
+            </select>
+
+            <h3>Bowler 1</h3>
+            <label for="BowlerName1">Bowler 1 Name:</label>
+            <input type="text" name="BowlerName1" required>
+
+            <label for="RunsConceded1">Runs Conceded:</label>
+            <input type="number" step="0.01" name="RunsConceded1" required>
+
+            <label for="Wkt1">Wickets:</label>
+            <input type="number" step="0.01" name="Wkt1" required>
+
+            <label for="NoOfBalls1">No of Balls:</label>
+            <input type="number" step="0.01" name="NoOfBalls1" required>
+
+            <label for="Innings1">Innings:</label>
+            <input type="number" step="0.01" name="Innings1" required>
+
+            <label for="Fours1">4s:</label>
+            <input type="number" step="0.01" name="Fours1" required>
+
+            <label for="Sixes1">6s:</label>
+            <input type="number" step="0.01" name="Sixes1" required>
+
+            <h3>Bowler 2</h3>
+            <label for="BowlerName2">Bowler 2 Name:</label>
+            <input type="text" name="BowlerName2" required>
+
+            <label for="RunsConceded2">Runs Conceded:</label>
+            <input type="number" step="0.01" name="RunsConceded2" required>
+
+            <label for="Wkt2">Wickets:</label>
+            <input type="number" step="0.01" name="Wkt2" required>
+
+            <label for="NoOfBalls2">No of Balls:</label>
+            <input type="number" step="0.01" name="NoOfBalls2" required>
+
+            <label for="Innings2">Innings:</label>
+            <input type="number" step="0.01" name="Innings2" required>
+
+            <label for="Fours2">4s:</label>
+            <input type="number" step="0.01" name="Fours2" required>
+
+            <label for="Sixes2">6s:</label>
+            <input type="number" step="0.01" name="Sixes2" required>
+
+            <button type="submit">Compare</button>
+        </form>
+    </div>
+
+    {% if bowlers_data %}
+    <div class="result-container">
+        <h3>Comparison Result:</h3>
+        <table class="table-container">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Bowler Name</th>
+                    <th>Cluster Label</th>
+                    <th>Feature Importance Value</th>
+                    <th>DPPI Index</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bowler in bowlers_data %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ bowler["Bowler Name"] }}</td>
+                    <td>{{ bowler["Cluster"] }}</td>
+                    <td>{{ "%.2f"|format(bowler["Feature Importance"]) }}</td>
+                    <td>{{ "%.2f"|format(bowler["DPPI Index"]) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>Feature Values</h3>
+        <table class="table-container">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Bowler 1</th>
+                    <th>Bowler 2</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for feature in bowlers_data[0]["Features"].keys() %}
+                <tr>
+                    <td>{{ feature }}</td>
+                    <td>{{ "%.2f"|format(bowlers_data[0]["Features"][feature]) }}</td>
+                    <td>{{ "%.2f"|format(bowlers_data[1]["Features"][feature]) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</body>
+</html>
