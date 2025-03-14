@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS (optional) -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .result-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .result-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .result-container h2 {
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <!-- Prediction Result Container -->
+    <div class="result-container">
+        <h1>Prediction Result</h1>
+        <div id="predictionResult">
+            <p><strong>Bowler Name:</strong> <span id="bowlerName"></span></p>
+            <p><strong>Phase:</strong> <span id="phase"></span></p>
+            <p><strong>Predicted Cluster:</strong> <span id="cluster"></span></p>
+            <p><strong>DPPI Score:</strong> <span id="dppiScore"></span></p>
+        </div>
+
+        <h2>Feature Importance</h2>
+        <table class="table table-bordered" id="featureImportanceTable">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Importance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be populated dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript for Displaying Prediction Result -->
+    <script>
+        // Extract query parameters from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const bowler_name = decodeURIComponent(urlParams.get('bowler_name'));
+        const phase = decodeURIComponent(urlParams.get('phase'));
+        const cluster = urlParams.get('cluster');
+        const dppi_score = urlParams.get('dppi_score');
+        const session_id = urlParams.get('session_id');
+
+        // Display the prediction result
+        document.getElementById("bowlerName").textContent = bowler_name;
+        document.getElementById("phase").textContent = phase;
+        document.getElementById("cluster").textContent = cluster;
+        document.getElementById("dppiScore").textContent = dppi_score;
+
+        // Fetch feature importance data
+        const user_id = localStorage.getItem("user_id");
+        if (user_id && session_id) {
+            fetch(`/get_predictions?user_id=${user_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Find the session and bowler entry
+                    const session = data.find(session => session.session_id === session_id);
+                    if (session && session.bowler_entries) {
+                        const bowlerEntry = session.bowler_entries.find(entry => entry.bowler_name === bowler_name);
+                        if (bowlerEntry && bowlerEntry.feature_importance) {
+                            // Populate the feature importance table
+                            const tableBody = document.querySelector("#featureImportanceTable tbody");
+                            bowlerEntry.feature_importance.forEach(feature => {
+                                const row = document.createElement("tr");
+                                const featureCell = document.createElement("td");
+                                const importanceCell = document.createElement("td");
+                                featureCell.textContent = feature.Feature;
+                                importanceCell.textContent = feature.Importance.toFixed(4);
+                                row.appendChild(featureCell);
+                                row.appendChild(importanceCell);
+                                tableBody.appendChild(row);
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching feature importance:", error);
+                });
+        }
+    </script>
+</body>
+</html>

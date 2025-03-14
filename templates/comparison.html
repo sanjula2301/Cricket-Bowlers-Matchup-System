@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bowler Comparison</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Bowler Comparison</h1>
+    <form id="comparisonForm">
+        <label for="bowler1">Bowler 1 Name:</label>
+        <input type="text" id="bowler1" name="bowler1" required><br><br>
+
+        <label for="bowler2">Bowler 2 Name:</label>
+        <input type="text" id="bowler2" name="bowler2" required><br><br>
+
+        <button type="submit">Compare</button>
+    </form>
+
+    <div id="comparisonResult"></div>
+
+    <script>
+        document.getElementById("comparisonForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const bowler1 = formData.get("bowler1");
+            const bowler2 = formData.get("bowler2");
+
+            const response1 = await fetch(`/get_single_bowler_performance?bowler_name=${bowler1}`);
+            const response2 = await fetch(`/get_single_bowler_performance?bowler_name=${bowler2}`);
+
+            const result1 = await response1.json();
+            const result2 = await response2.json();
+
+            document.getElementById("comparisonResult").innerHTML = `
+                <h2>Comparison Result</h2>
+                <h3>${bowler1}</h3>
+                <p>Total DPPI Score: ${result1.total_dppi_score}</p>
+                <p>Powerplay DPPI: ${result1.powerplay_dppi}</p>
+                <p>Middle Overs DPPI: ${result1.middle_overs_dppi}</p>
+                <p>Death Overs DPPI: ${result1.death_overs_dppi}</p>
+
+                <h3>${bowler2}</h3>
+                <p>Total DPPI Score: ${result2.total_dppi_score}</p>
+                <p>Powerplay DPPI: ${result2.powerplay_dppi}</p>
+                <p>Middle Overs DPPI: ${result2.middle_overs_dppi}</p>
+                <p>Death Overs DPPI: ${result2.death_overs_dppi}</p>
+            `;
+        });
+    </script>
+</body>
+</html>

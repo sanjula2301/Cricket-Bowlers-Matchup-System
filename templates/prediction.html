@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bowler Prediction</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS (optional) -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .prediction-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .prediction-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-label {
+            font-weight: bold;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Prediction Form Container -->
+    <div class="prediction-container">
+        <h1>Bowler Prediction</h1>
+        <form id="predictionForm">
+            <!-- Bowler Name -->
+            <div class="mb-3">
+                <label for="bowler_name" class="form-label">Bowler Name:</label>
+                <input type="text" class="form-control" id="bowler_name" name="bowler_name" required>
+            </div>
+
+            <!-- Match Phase -->
+            <div class="mb-3">
+                <label for="phase" class="form-label">Match Phase:</label>
+                <select class="form-select" id="phase" name="phase" required>
+                    <option value="Powerplay">Powerplay</option>
+                    <option value="MiddleOvers">Middle Overs</option>
+                    <option value="DeathOvers">Death Overs</option>
+                </select>
+            </div>
+
+            <!-- Raw Match Stats -->
+            <div class="mb-3">
+                <label for="wkt" class="form-label">Wickets Taken:</label>
+                <input type="number" class="form-control" id="wkt" name="wkt" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="runs_conceded" class="form-label">Runs Conceded:</label>
+                <input type="number" class="form-control" id="runs_conceded" name="runs_conceded" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="no_of_balls" class="form-label">Number of Balls Bowled:</label>
+                <input type="number" class="form-control" id="no_of_balls" name="no_of_balls" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="innings" class="form-label">Number of Innings:</label>
+                <input type="number" class="form-control" id="innings" name="innings" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="dot_balls" class="form-label">Dot Balls:</label>
+                <input type="number" class="form-control" id="dot_balls" name="dot_balls" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="fours" class="form-label">4s Conceded:</label>
+                <input type="number" class="form-control" id="fours" name="fours" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="sixes" class="form-label">6s Conceded:</label>
+                <input type="number" class="form-control" id="sixes" name="sixes" required>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary">Predict</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript for Form Submission -->
+    <script>
+        document.getElementById("predictionForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const user_id = localStorage.getItem("user_id");
+            if (!user_id) {
+                alert("Please login first.");
+                window.location.href = "/login";
+                return;
+            }
+
+            const formData = {
+                user_id: user_id,
+                bowler_name: document.getElementById("bowler_name").value,
+                phase: document.getElementById("phase").value,
+                Wkt: parseFloat(document.getElementById("wkt").value),
+                "Runs Conceded": parseFloat(document.getElementById("runs_conceded").value),
+                "No of Balls": parseFloat(document.getElementById("no_of_balls").value),
+                Innings: parseFloat(document.getElementById("innings").value),
+                "Dot balls": parseFloat(document.getElementById("dot_balls").value),
+                "4s": parseFloat(document.getElementById("fours").value),
+                "6s": parseFloat(document.getElementById("sixes").value)
+            };
+
+            // Step 1: Make Prediction
+            const predictionResponse = await fetch("/predict", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const predictionResult = await predictionResponse.json();
+            if (!predictionResponse.ok) {
+                alert("Error: " + predictionResult.error);
+                return;
+            }
+
+            // Step 2: Store Prediction in Firestore
+            const storeData = {
+                user_id: user_id,
+                bowler_name: formData.bowler_name,
+                phase: formData.phase,
+                predicted_cluster: predictionResult.predicted_cluster,
+                dppi_score: predictionResult.DPPI_Bowl_score,
+                feature_importance: predictionResult.feature_importance  // Add feature importance data
+            };
+
+            const storeResponse = await fetch("/store_prediction", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(storeData)
+            });
+
+            const storeResult = await storeResponse.json();
+            if (!storeResponse.ok) {
+                alert("Error storing prediction: " + storeResult.error);
+                return;
+            }
+
+            // Step 3: Redirect to Prediction Result Page
+            window.location.href = `/prediction_result?bowler_name=${encodeURIComponent(formData.bowler_name)}&phase=${encodeURIComponent(formData.phase)}&cluster=${predictionResult.predicted_cluster}&dppi_score=${predictionResult.DPPI_Bowl_score}&session_id=${storeResult.session_id}`;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+/* Custom Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+}
+
+/* Navigation Bar */
+.navbar {
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-link {
+    font-size: 1.1rem;
+    margin-left: 1rem;
+}
+
+/* Hero Section with Background Image */
+.hero-section {
+    padding: 100px 0;
+    background-image: url('../static/images/AdobeStock_448704958_Preview.jpeg'); /* Add your background image */
+
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.hero-section .overlay {
+    background-color: rgba(0, 0, 0, 0.5); /* Dark overlay for better text visibility */
+    padding: 50px 20px;
+    border-radius: 10px;
+}
+
+.hero-section h1 {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+.hero-section p {
+    font-size: 1.5rem;
+    margin-top: 1rem;
+}
+
+.hero-section .btn {
+    margin-top: 1.5rem;
+    padding: 10px 30px;
+    font-size: 1.2rem;
+}
+
+/* Features Section */
+.features-section {
+    padding: 50px 0;
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1rem;
+}
+
+.features-section h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.features-section p {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.features-section .btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+}
+
+/* Footer */
+footer {
+    padding: 20px 0;
+    background-color: #343a40;
+    color: white;
+}
+
+footer p {
+    margin: 0;
+    font-size: 1rem;
+}

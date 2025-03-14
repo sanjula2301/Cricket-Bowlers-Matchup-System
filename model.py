@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
 
 # **Precomputed Means and Standard Deviations**
@@ -57,20 +58,33 @@ def predict_new_bowler(phase_name, new_bowler_raw, training_df, feature_importan
     # Step 2: Normalize & Apply Log Transformation
     new_bowler_df = normalize_and_log_transform(new_bowler_df)
 
+
     # Define KPI Features
     numeric_features = ["BWI_normalized", "DBP_normalized", "BP_normalized", "Econ_normalized",
                         "BA_log", "SR_log", "SPI_log", "BBI_log"]
+    
+    missing_features = [f for f in numeric_features if f not in new_bowler_df.columns]
+    if missing_features:
+        raise ValueError(f"Missing features in bowler data: {', '.join(missing_features)}")
+
 
     # Step 3: Extract Training Features & Labels
     X_train = training_df[numeric_features]
     y_train = training_df['Cluster']
-
-    # Step 4: Train Random Forest Classifier
-    rf_model = RandomForestClassifier(n_estimators=200, random_state=42)
-    rf_model.fit(X_train, y_train)
+    
+    # Train Gradient Boosting Classifier with Regularization
+    gb_model = GradientBoostingClassifier(
+        n_estimators=100,       # More boosting iterations
+        learning_rate=0.05,     # Controls contribution of each tree
+        max_depth=5,            # Prevent deep trees
+        min_samples_split=10,   # Require more samples per split
+        min_samples_leaf=5,     # Require more samples per leaf
+        random_state=42
+    )
+    gb_model.fit(X_train, y_train)
 
     # Step 5: Predict the cluster for the new bowler
-    predicted_cluster = rf_model.predict(new_bowler_df[numeric_features])[0]
+    predicted_cluster =  gb_model.predict(new_bowler_df[numeric_features])[0]
     print(f"✅ Predicted Cluster for New Bowler in {phase_name}: {predicted_cluster}")
 
     # Step 6: Ensure feature importance data is properly structured
@@ -80,12 +94,12 @@ def predict_new_bowler(phase_name, new_bowler_raw, training_df, feature_importan
     # Convert feature importance to dictionary format
     feature_importance_combined = feature_importance_combined.set_index("Feature")
 
-    # Step 7: Compute DPPI Score using the feature importance of the predicted cluster
+    #Step 7: Compute DPPI Score using the feature importance of the predicted cluster
     DPPI_Bowl_score = sum(
         new_bowler_df[feature].values[0] * feature_importance_combined.loc[feature, "Importance"].values[0]
         for feature in numeric_features
     )
-
+    
     print(f"🔹 Predicted DPPI Score for New Bowler in {phase_name}: {DPPI_Bowl_score:.2f}")
 
     # Step 8: Return predictions and feature importance
