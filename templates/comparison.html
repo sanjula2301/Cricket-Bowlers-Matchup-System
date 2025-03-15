@@ -4,49 +4,220 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bowler Comparison</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .comparison-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+        .winner {
+            color: green;
+            font-weight: bold;
+        }
+        .loser {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>Bowler Comparison</h1>
-    <form id="comparisonForm">
-        <label for="bowler1">Bowler 1 Name:</label>
-        <input type="text" id="bowler1" name="bowler1" required><br><br>
+    <div class="comparison-container">
+        <h1 class="text-center">Bowler Comparison</h1>
 
-        <label for="bowler2">Bowler 2 Name:</label>
-        <input type="text" id="bowler2" name="bowler2" required><br><br>
+        <!-- Redirect to Home Page -->
+        <div class="text-center mb-4">
+            <a href="/" class="btn btn-secondary">Go to Home</a>
+        </div>
 
-        <button type="submit">Compare</button>
-    </form>
+        <!-- Bowler Selection -->
+        <div class="mb-4">
+            <label for="bowler1" class="form-label">Select Bowler 1:</label>
+            <select id="bowler1" class="form-select" required>
+                <option value="">-- Select Bowler 1 --</option>
+            </select>
+        </div>
 
-    <div id="comparisonResult"></div>
+        <div class="mb-4">
+            <label for="bowler2" class="form-label">Select Bowler 2:</label>
+            <select id="bowler2" class="form-select" required>
+                <option value="">-- Select Bowler 2 --</option>
+            </select>
+        </div>
 
+        <!-- Compare Button -->
+        <div class="text-center mb-4">
+            <button id="compareButton" class="btn btn-primary">Compare</button>
+        </div>
+
+        <!-- Bowler Rankings -->
+        <h2 class="text-center">Bowler Rankings</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Bowler Name</th>
+                    <th>Total DPPI Score</th>
+                </tr>
+            </thead>
+            <tbody id="bowlerRankings">
+                <!-- Rows will be populated dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Comparison Result -->
+        <div id="comparisonResult"></div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript for Fetching Bowlers and Comparison -->
     <script>
-        document.getElementById("comparisonForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const bowler1 = formData.get("bowler1");
-            const bowler2 = formData.get("bowler2");
+        const user_id = localStorage.getItem("user_id");
+        if (!user_id) {
+            alert("Please login first.");
+            window.location.href = "/login";
+        }
 
-            const response1 = await fetch(`/get_single_bowler_performance?bowler_name=${bowler1}`);
-            const response2 = await fetch(`/get_single_bowler_performance?bowler_name=${bowler2}`);
+        // Fetch all bowlers for the user
+        fetch(`/get_predictions?user_id=${user_id}`)
+            .then(response => response.json())
+            .then(data => {
+                const bowlerSelect1 = document.getElementById("bowler1");
+                const bowlerSelect2 = document.getElementById("bowler2");
+                const bowlerRankings = document.getElementById("bowlerRankings");
 
-            const result1 = await response1.json();
-            const result2 = await response2.json();
+                // Collect all bowlers and their total DPPI scores
+                const bowlers = [];
+                data.forEach(session => {
+                    if (session.bowler_entries) {
+                        session.bowler_entries.forEach(bowler => {
+                            bowlers.push({
+                                name: bowler.bowler_name,
+                                total_dppi_score: bowler.dppi_score || 0
+                            });
+                        });
+                    }
+                });
 
-            document.getElementById("comparisonResult").innerHTML = `
-                <h2>Comparison Result</h2>
-                <h3>${bowler1}</h3>
-                <p>Total DPPI Score: ${result1.total_dppi_score}</p>
-                <p>Powerplay DPPI: ${result1.powerplay_dppi}</p>
-                <p>Middle Overs DPPI: ${result1.middle_overs_dppi}</p>
-                <p>Death Overs DPPI: ${result1.death_overs_dppi}</p>
+                // Rank bowlers by total DPPI score
+                bowlers.sort((a, b) => b.total_dppi_score - a.total_dppi_score);
 
-                <h3>${bowler2}</h3>
-                <p>Total DPPI Score: ${result2.total_dppi_score}</p>
-                <p>Powerplay DPPI: ${result2.powerplay_dppi}</p>
-                <p>Middle Overs DPPI: ${result2.middle_overs_dppi}</p>
-                <p>Death Overs DPPI: ${result2.death_overs_dppi}</p>
-            `;
+                // Populate bowler dropdowns and rankings table
+                bowlers.forEach((bowler, index) => {
+                    // Add to dropdowns
+                    const option1 = document.createElement("option");
+                    option1.value = bowler.name;
+                    option1.textContent = bowler.name;
+                    bowlerSelect1.appendChild(option1.cloneNode(true));
+
+                    const option2 = document.createElement("option");
+                    option2.value = bowler.name;
+                    option2.textContent = bowler.name;
+                    bowlerSelect2.appendChild(option2);
+
+                    // Add to rankings table
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${bowler.name}</td>
+                        <td>${bowler.total_dppi_score.toFixed(2)}</td>
+                    `;
+                    bowlerRankings.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error("Error fetching bowlers:", error);
+            });
+
+        // Handle compare button click
+        document.getElementById("compareButton").addEventListener("click", async () => {
+            const bowler1 = document.getElementById("bowler1").value;
+            const bowler2 = document.getElementById("bowler2").value;
+
+            if (!bowler1 || !bowler2) {
+                alert("Please select two bowlers to compare.");
+                return;
+            }
+
+            try {
+                // Fetch performance data for Bowler 1
+                const response1 = await fetch(`/get_single_bowler_performance?user_id=${user_id}&bowler_name=${bowler1}`);
+                if (!response1.ok) {
+                    throw new Error(`Failed to fetch data for ${bowler1}: ${response1.statusText}`);
+                }
+                const result1 = await response1.json();
+
+                // Fetch performance data for Bowler 2
+                const response2 = await fetch(`/get_single_bowler_performance?user_id=${user_id}&bowler_name=${bowler2}`);
+                if (!response2.ok) {
+                    throw new Error(`Failed to fetch data for ${bowler2}: ${response2.statusText}`);
+                }
+                const result2 = await response2.json();
+
+                // Determine the overall winner
+                const overallWinner = result1.total_dppi_score > result2.total_dppi_score ? bowler1 : bowler2;
+
+                // Generate comparison table
+                const comparisonResult = `
+                    <h2 class="text-center">Comparison Result</h2>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>${bowler1}</th>
+                                <th>${bowler2}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Total DPPI Score</td>
+                                <td class="${result1.total_dppi_score > result2.total_dppi_score ? 'winner' : 'loser'}">${result1.total_dppi_score?.toFixed(2) || "N/A"}</td>
+                                <td class="${result2.total_dppi_score > result1.total_dppi_score ? 'winner' : 'loser'}">${result2.total_dppi_score?.toFixed(2) || "N/A"}</td>
+                            </tr>
+                            <tr>
+                                <td>Powerplay DPPI</td>
+                                <td class="${result1.powerplay_dppi > result2.powerplay_dppi ? 'winner' : 'loser'}">${result1.powerplay_dppi?.toFixed(2) || "N/A"}</td>
+                                <td class="${result2.powerplay_dppi > result1.powerplay_dppi ? 'winner' : 'loser'}">${result2.powerplay_dppi?.toFixed(2) || "N/A"}</td>
+                            </tr>
+                            <tr>
+                                <td>Middle Overs DPPI</td>
+                                <td class="${result1.middle_overs_dppi > result2.middle_overs_dppi ? 'winner' : 'loser'}">${result1.middle_overs_dppi?.toFixed(2) || "N/A"}</td>
+                                <td class="${result2.middle_overs_dppi > result1.middle_overs_dppi ? 'winner' : 'loser'}">${result2.middle_overs_dppi?.toFixed(2) || "N/A"}</td>
+                            </tr>
+                            <tr>
+                                <td>Death Overs DPPI</td>
+                                <td class="${result1.death_overs_dppi > result2.death_overs_dppi ? 'winner' : 'loser'}">${result1.death_overs_dppi?.toFixed(2) || "N/A"}</td>
+                                <td class="${result2.death_overs_dppi > result1.death_overs_dppi ? 'winner' : 'loser'}">${result2.death_overs_dppi?.toFixed(2) || "N/A"}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 class="text-center">Best Bowler: <span class="winner">${overallWinner}</span></h3>
+                `;
+
+                document.getElementById("comparisonResult").innerHTML = comparisonResult;
+            } catch (error) {
+                console.error("Error comparing bowlers:", error);
+                alert("An error occurred while comparing bowlers. Please try again.");
+            }
         });
     </script>
 </body>
