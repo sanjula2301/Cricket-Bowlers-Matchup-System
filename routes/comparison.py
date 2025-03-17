@@ -61,7 +61,16 @@ def fetch_bowler_data(user_id, bowler_name):
         "death_overs_dppi": 0
     }
 
+    # Track unique sessions to avoid duplicate entries
+    processed_sessions = set()
+
     for session in sessions:
+        session_id = session.id
+        if session_id in processed_sessions:
+            continue  # Skip already processed sessions
+        processed_sessions.add(session_id)
+
+        # Fetch bowler entries for the current session
         bowler_entries = session.reference.collection("bowler_entries").where("bowler_name", "==", bowler_name).stream()
         for entry in bowler_entries:
             entry_data = entry.to_dict()
@@ -74,3 +83,55 @@ def fetch_bowler_data(user_id, bowler_name):
                 bowler_data["death_overs_dppi"] += entry_data.get("dppi_score", 0)
 
     return bowler_data
+
+
+
+@comparison_bp.route('/get_bowlers_by_phase', methods=['GET'])
+def get_bowlers_by_phase():
+    user_id = request.args.get("user_id")
+    phase = request.args.get("phase")
+
+    if not user_id or not phase:
+        return jsonify({"error": "Missing user_id or phase"}), 400
+
+    try:
+        sessions = db.collection("users").document(user_id).collection("session_data").stream()
+        bowlers = set()
+
+        for session in sessions:
+            bowler_entries = session.reference.collection("bowler_entries").where("phase", "==", phase).stream()
+            for entry in bowler_entries:
+                entry_data = entry.to_dict()
+                bowlers.add(entry_data.get("bowler_name", ""))
+
+        return jsonify([{"name": bowler} for bowler in bowlers])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@comparison_bp.route('/get_overall_dppi', methods=['GET'])
+def get_overall_dppi():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+
+    try:
+        sessions = db.collection("users").document(user_id).collection("session_data").stream()
+        bowler_scores = {}
+
+        for session in sessions:
+            bowler_entries = session.reference.collection("bowler_entries").stream()
+            for entry in bowler_entries:
+                entry_data = entry.to_dict()
+                bowler_name = entry_data.get("bowler_name", "")
+                dppi_score = float(entry_data.get("dppi_score", 0))
+
+                if bowler_name in bowler_scores:
+                    bowler_scores[bowler_name] += dppi_score
+                else:
+                    bowler_scores[bowler_name] = dppi_score
+
+        sorted_scores = sorted(bowler_scores.items(), key=lambda x: x[1], reverse=True)
+        return jsonify([{"name": bowler, "total_dppi": score} for bowler, score in sorted_scores])
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -18,19 +18,8 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/prediction">Bowler Prediction</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/comparison">Bowler Comparison</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/login">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/signup">Signup</a>
-                    </li>
+                <ul class="navbar-nav ms-auto" id="navLinks">
+                    <!-- Links will be dynamically inserted based on user login status -->
                 </ul>
             </div>
         </div>
@@ -41,7 +30,7 @@
         <div class="overlay">
             <h1 class="display-4">Welcome to Bowler Performance Prediction</h1>
             <p class="lead">Analyze and predict bowler performance with advanced machine learning models.</p>
-            <a href="/prediction" class="btn btn-light btn-lg">Get Started</a>
+            <a id="getStartedButton" class="btn btn-light btn-lg">Get Started</a>
         </div>
     </div>
 
@@ -52,19 +41,19 @@
                 <img src="{{ url_for('static', filename='images/line-chart.png') }}" alt="Prediction Icon" class="feature-icon">
                 <h2>Bowler Prediction</h2>
                 <p>Predict the performance of a bowler based on match statistics.</p>
-                <a href="/prediction" class="btn btn-outline-primary">Learn More</a>
+                <a id="predictionLink" class="btn btn-outline-primary">Learn More</a>
             </div>
             <div class="col-md-4 text-center">
                 <img src="{{ url_for('static', filename='images/testing.png') }}" alt="Comparison Icon" class="feature-icon">
                 <h2>Bowler Comparison</h2>
                 <p>Compare the performance of multiple bowlers.</p>
-                <a href="/comparison" class="btn btn-outline-primary">Learn More</a>
+                <a id="comparisonLink" class="btn btn-outline-primary">Learn More</a>
             </div>
             <div class="col-md-4 text-center">
                 <img src="{{ url_for('static', filename='images/notes-tools-symbol-of-a-clipboard-and-notebook.png') }}" alt="Dashboard Icon" class="feature-icon">
                 <h2>User Dashboard</h2>
                 <p>Track your predictions and performance over time.</p>
-                <a href="/login" class="btn btn-outline-primary">Login</a>
+                <a id="dashboardLink" class="btn btn-outline-primary">Learn More</a>
             </div>
         </div>
     </div>
@@ -77,5 +66,43 @@
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript for Managing User Session -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const user_id = localStorage.getItem("user_id");
+        const navLinks = document.getElementById("navLinks");
+        const getStartedButton = document.getElementById("getStartedButton");
+
+        if (user_id) {
+            // User is logged in - show logout and protected pages
+            navLinks.innerHTML = `
+                <li class="nav-item"><a class="nav-link" href="/prediction">Bowler Prediction</a></li>
+                <li class="nav-item"><a class="nav-link" href="/comparison">Bowler Comparison</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dashboard">User Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link text-danger" href="#" id="logout">Logout</a></li>
+            `;
+
+            getStartedButton.href = "/dashboard";
+
+            // Logout functionality
+            document.getElementById("logout").addEventListener("click", function () {
+                fetch("/logout", { method: "POST", credentials: "include" })
+                    .then(() => {
+                        localStorage.removeItem("user_id");
+                        window.location.href = "/";
+                    });
+            });
+        } else {
+            // User is NOT logged in - show only login/signup
+            navLinks.innerHTML = `
+                <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                <li class="nav-item"><a class="nav-link" href="/signup">Signup</a></li>
+            `;
+
+            getStartedButton.href = "/login";
+        }
+        });
+    </script>
 </body>
 </html>

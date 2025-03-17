@@ -27,11 +27,17 @@
             margin-top: 30px;
             margin-bottom: 20px;
         }
-        .table {
-            margin-top: 20px;
+        .progress {
+            margin-bottom: 10px;
         }
-        .table th {
-            background-color: #f8f9fa;
+        .progress-bar {
+            transition: width 1s ease-in-out;
+        }
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
         }
     </style>
 </head>
@@ -51,17 +57,14 @@
         </div>
 
         <h2>Feature Importance</h2>
-        <table class="table table-bordered" id="featureImportanceTable">
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Importance</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Rows will be populated dynamically -->
-            </tbody>
-        </table>
+        <div id="featureImportanceProgress">
+            <!-- Loading Spinner -->
+            <div class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Bootstrap JS and dependencies -->
@@ -70,50 +73,119 @@
 
     <!-- JavaScript for Displaying Prediction Result -->
     <script>
-        // Extract query parameters from the URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const bowler_name = decodeURIComponent(urlParams.get('bowler_name'));
-        const phase = decodeURIComponent(urlParams.get('phase'));
-        const cluster = urlParams.get('cluster');
-        const dppi_score = urlParams.get('dppi_score');
-        const session_id = urlParams.get('session_id');
+const clusterRoleMap = {
+    "Powerplay": {
+        0: "Specialist Powerplay Bowler",
+        1: "Supporting Powerplay Bowler"
+    },
+    "MiddleOvers": {
+        0: "Supporting Middle Overs Bowler",
+        1: "Specialist Middle Overs Bowler"
+    },
+    "DeathOvers": {
+        0: "Supporting Death Overs Bowler",
+        1: "Specialist Death Overs Bowler"
+    }
+};
 
-        // Display the prediction result
-        document.getElementById("bowlerName").textContent = bowler_name;
-        document.getElementById("phase").textContent = phase;
-        document.getElementById("cluster").textContent = cluster;
-        document.getElementById("dppiScore").textContent = dppi_score;
+// Extract query parameters from the URL
+const urlParams = new URLSearchParams(window.location.search);
+const bowler_name = decodeURIComponent(urlParams.get('bowler_name'));
+const phase = decodeURIComponent(urlParams.get('phase'));
+const cluster = parseInt(urlParams.get('cluster')); // Convert to integer
+const dppi_score = urlParams.get('dppi_score');
+const session_id = urlParams.get('session_id');
 
-        // Fetch feature importance data
-        const user_id = localStorage.getItem("user_id");
-        if (user_id && session_id) {
-            fetch(`/get_predictions?user_id=${user_id}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Find the session and bowler entry
-                    const session = data.find(session => session.session_id === session_id);
-                    if (session && session.bowler_entries) {
-                        const bowlerEntry = session.bowler_entries.find(entry => entry.bowler_name === bowler_name);
-                        if (bowlerEntry && bowlerEntry.feature_importance) {
-                            // Populate the feature importance table
-                            const tableBody = document.querySelector("#featureImportanceTable tbody");
-                            bowlerEntry.feature_importance.forEach(feature => {
-                                const row = document.createElement("tr");
-                                const featureCell = document.createElement("td");
-                                const importanceCell = document.createElement("td");
-                                featureCell.textContent = feature.Feature;
-                                importanceCell.textContent = feature.Importance.toFixed(4);
-                                row.appendChild(featureCell);
-                                row.appendChild(importanceCell);
-                                tableBody.appendChild(row);
-                            });
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error("Error fetching feature importance:", error);
-                });
-        }
+// Get the role-based cluster name
+const clusterRole = clusterRoleMap[phase] && clusterRoleMap[phase][cluster] 
+    ? clusterRoleMap[phase][cluster] 
+    : `Unknown Cluster (${cluster})`;
+
+// Display the prediction result
+document.getElementById("bowlerName").textContent = bowler_name;
+document.getElementById("phase").textContent = phase;
+document.getElementById("cluster").textContent = clusterRole;  // Show role-based name
+document.getElementById("dppiScore").textContent = dppi_score;
+
+
+// Map backend feature names to user-friendly names
+const featureNameMap = {
+    "BWI_normalized": "Big Wicket Index (BWI)",
+    "BA_log": "Bowling Average (BA)",
+    "SR_log": "Strike Rate (SR)",
+    "BBI_log": "Balls Bowled Index (BBI)",
+    "Econ_normalized": "Economy Rate (ECON)",
+    "SPI_log": "Short Performance Index (SPI)"
+};
+
+// Fetch feature importance data
+const user_id = localStorage.getItem("user_id");
+
+if (user_id && session_id) {
+    fetch(`/get_predictions?user_id=${user_id}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Fetched Data:", data); // Debugging: Log the fetched data
+
+            // Find the session using session_id
+            const session = data.find(s => s.session_id === session_id);
+            if (!session) {
+                throw new Error(`Session with ID ${session_id} not found`);
+            }
+
+            // Find the bowler entry
+            const bowlerEntry = session.bowler_entries?.find(entry => entry.bowler_name.trim() === bowler_name.trim());
+            if (!bowlerEntry) {
+                throw new Error(`Bowler ${bowler_name} not found in session`);
+            }
+
+            // Extract feature importance data
+            const featureImportance = bowlerEntry.feature_importance;
+            if (!featureImportance || featureImportance.length === 0) {
+                throw new Error(`No feature importance data found for ${bowler_name}`);
+            }
+
+            // Remove loading spinner
+            const featureImportanceDiv = document.getElementById("featureImportanceProgress");
+            featureImportanceDiv.innerHTML = "";
+
+            // Populate feature importance progress bars
+            featureImportance.forEach(feature => {
+                const userFriendlyName = featureNameMap[feature.Feature] || feature.Feature; // Use fallback name
+                const importancePercentage = (feature.Importance * 100).toFixed(2);
+
+                const progressBar = `
+                    <div class="mb-3">
+                        <strong>${userFriendlyName}</strong>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: ${importancePercentage}%;" 
+                                 aria-valuenow="${importancePercentage}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                ${importancePercentage}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+                featureImportanceDiv.insertAdjacentHTML("beforeend", progressBar);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching feature importance:", error);
+            // Remove spinner and display error
+            const featureImportanceDiv = document.getElementById("featureImportanceProgress");
+            featureImportanceDiv.innerHTML = `<p class="text-danger">Failed to load feature importance data. Please try again.</p>`;
+        });
+} else {
+    console.error("User ID or Session ID is missing");
+    const featureImportanceDiv = document.getElementById("featureImportanceProgress");
+    featureImportanceDiv.innerHTML = `<p class="text-danger">User ID or Session ID is missing.</p>`;
+}
     </script>
 </body>
 </html>

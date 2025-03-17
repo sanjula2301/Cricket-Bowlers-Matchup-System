@@ -21,7 +21,7 @@ def predict():
 def store_bowler_prediction():
     """Stores bowler prediction data in Firestore."""
     data = request.json
-    print(" Incoming Data for Store Prediction:", data)  #  Debugging Log
+    print(" Incoming Data for Store Prediction:", data)  # Debugging Log
 
     # Validate and enforce data types
     user_id = str(data.get("user_id", "")).strip()
@@ -32,8 +32,20 @@ def store_bowler_prediction():
     feature_importance = data.get("feature_importance", [])
 
     if not user_id or not bowler_name or not phase or predicted_cluster == -1 or dppi_score == -1:
-        print(" Missing required fields!")
+        print("Missing required fields!")
         return jsonify({"error": "Missing required fields"}), 400
+
+    # Ensure user exists in Firestore
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+    
+    if not user_doc.exists:
+        print(f"User {user_id} not found in Firestore. Creating new user document...")
+        user_ref.set({
+            "created_at": datetime.datetime.utcnow(),
+            "username": "New User",
+            "email": "unknown",
+        })  # Create a basic user document
 
     # Remove duplicate features
     unique_feature_importance = []
@@ -87,13 +99,13 @@ def store_bowler_prediction():
     if existing_bowler_id:
         # Update existing entry
         session_ref.collection("bowler_entries").document(existing_bowler_id).update(bowler_entry)
-        print(f"🔄 Updated bowler entry: {bowler_name} in session {session_id}")
+        print(f"Updated bowler entry: {bowler_name} in session {session_id}")
         message = "Bowler data updated successfully"
     else:
         # Add new bowler entry
         bowler_ref = session_ref.collection("bowler_entries").document()  # Generates a unique ID
         bowler_ref.set(bowler_entry)
-        print(f"New bowler entry stored: {bowler_name} in session {session_id}")
+        print(f" New bowler entry stored: {bowler_name} in session {session_id}")
         message = "Bowler data stored successfully"
 
     return jsonify({"message": message, "session_id": session_id})
@@ -125,13 +137,11 @@ def get_predictions():
             session_data = session.to_dict()
             session_data["session_id"] = session_id  # Store session ID
 
-            print(f"Session Found: {session_id}, Data: {session_data}")
+            print(f" Session Found: {session_id}, Data: {session_data}")
 
             # Fetch bowler entries inside this session
             bowler_entries = session.reference.collection("bowler_entries").stream()
             bowler_list = [entry.to_dict() for entry in bowler_entries]
-
-            # print(f"Bowler Entries in Session {session_id}: {bowler_list}")
 
             if bowler_list:
                 session_data["bowler_entries"] = bowler_list
@@ -148,3 +158,4 @@ def get_predictions():
     except Exception as e:
         print(f"Error fetching predictions: {e}")
         return jsonify({"error": "An error occurred while fetching predictions"}), 500
+
