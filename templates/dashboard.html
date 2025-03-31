@@ -6,34 +6,93 @@
     <title>Dashboard</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body {
-            background-color: #f8f9fa;
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #f8f9fa;
+            --text-color: #202124;
+            --light-text: #5f6368;
+            --danger-color: #ea4335;
         }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .navbar {
+            background-color: white !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            color: var(--primary-color) !important;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: var(--text-color) !important;
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            background-color: var(--danger-color);
+            color: white;
+            font-weight: 500;
+            border-radius: 5px;
+            padding: 6px 12px;
+        }
+
+        .btn-logout:hover {
+            background-color: #d33426;
+        }
+
         .dashboard-container {
             max-width: 1000px;
             margin: 50px auto;
-            padding: 20px;
+            padding: 30px;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
         }
-        .btn-logout {
-            background-color: #dc3545;
-            color: white;
-        }
-        .btn-logout:hover {
-            background-color: #c82333;
-        }
+
         .card {
-            border-radius: 10px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: none;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .table thead {
+            background-color: #f1f3f4;
+        }
+
+        .table th {
+            font-weight: 600;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(26, 115, 232, 0.05);
+        }
+
+        .footer {
+            background-color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 50px;
+            color: var(--light-text);
         }
     </style>
 </head>
 <body>
-
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand" href="/">Bowler Performance Prediction</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -43,56 +102,66 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="/prediction">Bowler Prediction</a></li>
                     <li class="nav-item"><a class="nav-link" href="/comparison">Bowler Comparison</a></li>
-                    <li class="nav-item"><button class="btn btn-logout nav-link" id="logoutButton">Logout</button></li>
+                    <li class="nav-item"><button class="btn btn-logout" id="logoutButton">Logout</button></li>
                 </ul>
             </div>
         </div>
     </nav>
 
     <div class="dashboard-container">
-        <h2 class="text-center mb-4">Welcome, <span id="username">User</span>!</h2>
+        <h2 class="text-center mb-4">Welcome, <span id="username"></span>!</h2>
 
         <div class="row">
             <div class="col-md-12">
-                <div class="card p-3 mb-3">
+                <div class="card p-3 mb-4">
                     <h5>Quick Actions</h5>
                     <a href="/prediction" class="btn btn-primary w-100 mb-2">Go to Prediction</a>
-                    <a href="/comparison" class="btn btn-primary w-100">Go to Comparison</a>
+                    <a href="/comparison" class="btn btn-outline-primary w-100">Go to Comparison</a>
                 </div>
             </div>
         </div>
 
-        <h4 class="mt-4">Recent Predictions</h4>
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Bowler Name</th>
-                        <th>Phase</th>
-                        <th>Predicted Role</th>
-                        <th>DPPI Score</th>
-                    </tr>
-                </thead>
-                <tbody id="recentPredictions">
-                    <tr><td colspan="4" class="text-center">Loading...</td></tr>
-                </tbody>
-            </table>
+        <h4 class="mt-4 mb-3">Recent Predictions</h4>
+        <div class="card mb-4">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Bowler Name</th>
+                            <th>Phase</th>
+                            <th>Predicted Role</th>
+                            <th>DPPI Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentPredictions">
+                        <tr><td colspan="4" class="text-center">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Rank</th>
-                        <th>Bowler Name</th>
-                        <th>Total DPPI Score</th>
-                    </tr>
-                </thead>
-                <tbody id="overallPerformanceTable">
-                    <tr><td colspan="4" class="text-center">Loading...</td></tr>
-                </tbody>
-            </table>
+
+        <h4 class="mt-4 mb-3">Overall Performance</h4>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Bowler Name</th>
+                            <th>Total DPPI Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overallPerformanceTable">
+                        <tr><td colspan="4" class="text-center">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <footer class="footer">
+        &copy; 2025 Bowler Performance Prediction. All rights reserved.
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
